@@ -1,76 +1,99 @@
 import os
+from tkinter import *
 import tkinter as tk
-from PIL import ImageTk, Image
+from PIL import ImageTk, Image 
 import qrcode
 
-def on_enter(e):
-    convert_button.config(bg='#80C8FF', fg='white')
 
-def on_leave(e):
-    convert_button.config(bg='#2F2F2F', fg='#D5D5D5')
+root = tk.Tk()
+###################
+screen_width = str(root.winfo_screenwidth())
+screen_height = str(root.winfo_screenheight())
+root.geometry('700x800')
+root.config(bg='#d4d4d4')
+root.maxsize(700,800)
+root.minsize(600,700)
 
-def fade_in(label, image):
-    label.config(image=image, bg='#2F2F2F')
-    label.image = image
+def error():
+    problem_label.pack_forget()
+    canvass.pack_forget()
+    qrcode_installed_label.pack(side=TOP)
+    problem_label.pack()
+    canvass.pack()
 
-    alpha = 0
-    while alpha < 1:
-        label.update()
-        label.update_idletasks()
-        label.config(bg=adjust_color('#2F2F2F', alpha))
-        alpha += 0.02
-
-def adjust_color(color, alpha):
-    return '#%02x%02x%02x' % tuple(int(alpha * int(color[i:i+2], 16)) + int((1 - alpha) * int(color[i:i+2], 16)) for i in (1, 3, 5))
 
 def main():
     try:
         qrcode_installed_label.pack_forget()
     except Exception as e:
         print(e)
+    
 
+
+    # Assuming you have a link_input and canvass already defined
+
+    # Get the link from the input
     link = str(link_input.get())
+
+    # Generate the QR code image
     qrcode_img = qrcode.make(link)
 
-    if os.path.exists('qrcode.jpg'):
-        os.remove('qrcode.jpg')
+    # Save the image directly using save() method
+    qrcode_img.save('qrcode.jpg')
 
-    qrcode_img.save('qrcode.jpg') # Save the image directly using save() method
+    # Define maximum width and height
+    max_width = 500
+    max_height = 500
 
+    # Open the QR code image
     img = Image.open("qrcode.jpg")
-    img = img.resize((200, 200), Image.ANTIALIAS)
 
+    # Get the current dimensions of the image
+    width, height = img.size
+
+    # Calculate the new dimensions while maintaining the aspect ratio
+    if width > max_width or height > max_height:
+        ratio = min(max_width / width, max_height / height)
+        new_width = int(width * ratio)
+        new_height = int(height * ratio)
+        img = img.resize((new_width, new_height), Image.ANTIALIAS)
+
+    # Save the resized image
+    img.save('qrcode.jpg')
+
+    # Load the resized image into a PhotoImage
     global image_qr
-    image_qr = ImageTk.PhotoImage(img)
+    image_qr = ImageTk.PhotoImage(file='qrcode.jpg')
 
-    fade_in(qr_image_label, image_qr)
+    # Create a canvas and display the image
+    canvass.create_image(80, 10, anchor=tk.NW, image=image_qr)
 
-root = tk.Tk()
-root.title('Link to QR Code Converter')
-root.geometry('700x500')
-root.config(bg='#2F2F2F')
+    # Remember to start the Tkinter main loop if you haven't already
+    root.mainloop()
 
-root.bind('<Return>', lambda event=None: main())
 
-title = tk.Label(root, text='Link to QR Code Converter', font='Helvetica 24 bold', bg='#2F2F2F', fg='#D5D5D5')
-title.pack(pady=10)
 
-link_input_label = tk.Label(root, text='Enter Link:', font='Helvetica 14', bg='#2F2F2F', fg='#D5D5D5')
+title = Label(root, text='link to qr code converter', font='Helvetica 30', bg='#d4d4d4')
+title.pack()
+
+link_input_label = Label(root, text='link:', font='link_input 15', bg='#d4d4d4')
 link_input_label.pack()
+link_input = Entry(root, font='Helvetica 16', width=50, bg='#1c1c1c', fg = 'white')
+link_input.pack()
 
-link_input = tk.Entry(root, font='Helvetica 14', width=40, bg='#3F3F3F', fg='#D5D5D5', relief=tk.FLAT)
-link_input.pack(pady=5)
+convert_button = Button(root, text='convert', command=main, font='Helvetica 16', bg='#1c1c1c', fg = 'white')
+convert_button.pack()
 
-convert_button = tk.Button(root, text='Convert', command=main, font='Helvetica 14', bg='#2F2F2F', fg='#D5D5D5', relief=tk.FLAT)
-convert_button.pack(pady=10)
 
-convert_button.bind("<Enter>", on_enter)
-convert_button.bind("<Leave>", on_leave)
+problem_label = Label(root, text='qr code not working? link might be too long!', font='verdana 10')
 
-qr_image_label = tk.Label(root, bg='#2F2F2F')
-qr_image_label.pack()
 
-qrcode_installed_label = tk.Label(root, text="[ERROR]", fg='red', font='Helvetica 50')
-qrcode_installed_label.pack_forget()
+
+
+canvass = Canvas(root, width=1300, height = 800, bg= '#1c1c1c')
+canvass.pack()
+problem_label.pack()
+qrcode_installed_label = Label(root, text="[ERROR]", fg='red', font='verdana 50')
+
 
 root.mainloop()
